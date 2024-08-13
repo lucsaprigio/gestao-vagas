@@ -1,31 +1,31 @@
 package br.com.lucasaprigio.gestao_vagas.modules.candidate.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import br.com.lucasaprigio.gestao_vagas.exceptions.UserFoundException;
 import br.com.lucasaprigio.gestao_vagas.modules.candidate.CandidateEntity;
-import br.com.lucasaprigio.gestao_vagas.modules.candidate.CandidateRepository;
+import br.com.lucasaprigio.gestao_vagas.modules.candidate.useCases.CreateCandidateUseCase;
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/candidate") // endpoint
 public class CandidateController {
 
-    @Autowired // O spring sempre vai instanciar nossa classe
-    private CandidateRepository candidateRepository;
+    @Autowired
+    private CreateCandidateUseCase createCandidateUseCase;
 
     @PostMapping("/") // Método POST na raíz ficará /candidate/
-    public CandidateEntity create(@Valid @RequestBody CandidateEntity candidateEntity) { // Estou pegando todas as informações da Entidade do meu Body
-        this.candidateRepository
-        .findByUsernameOrEmail(candidateEntity.getUsername(), candidateEntity.getEmail())
-        .ifPresent((user) -> {
-            throw new UserFoundException();
-        });
-            
-        return this.candidateRepository.save(candidateEntity);
+    // Colocamos o ResponseEntity como retorno, para retornar um erro também, não só o usuário.
+    public ResponseEntity<Object> create(@Valid @RequestBody CandidateEntity candidateEntity) { // Estou pegando todas as informações da Entidade do meu Body
+        try {
+            var result = this.createCandidateUseCase.execute(candidateEntity);
+            return ResponseEntity.ok().body(result);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }
